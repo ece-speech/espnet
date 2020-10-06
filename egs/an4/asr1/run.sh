@@ -34,13 +34,12 @@ lm_resume=          # specify a snapshot file to resume LM training
 recog_model=model.loss.best # set a model to be used for decoding: 'model.acc.best' or 'model.loss.best'
 
 # data
-datadir=./downloads
+datadir=data
 an4_root=${datadir}/an4
 data_url=http://www.speech.cs.cmu.edu/databases/an4/
 
 # exp tag
 tag="" # tag for managing experiments.
-
 . utils/parse_options.sh || exit 1;
 
 # Set bash to 'debug' mode, it will exit on :
@@ -53,6 +52,7 @@ train_set="train_nodev"
 train_dev="train_dev"
 lm_test="test"
 recog_set="train_dev test"
+mkdir -p $datadir
 
 if [ ${stage} -le -1 ] && [ ${stop_stage} -ge -1 ]; then
     echo "stage -1: Data Download"
@@ -140,8 +140,6 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
 fi
 
 
-# It takes about one day. If you just want to do end-to-end ASR without LM,
-# you can skip this and remove --rnnlm option in the recognition (stage 5)
 if [ -z ${lmtag} ]; then
     lmtag=$(basename ${lm_config%.*})
     if [ ${use_wordlm} = true ]; then
