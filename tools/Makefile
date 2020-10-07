@@ -4,7 +4,7 @@ CHAINER_VERSION := 6.0.0
 # Disable cupy installation
 NO_CUPY :=
 # PyTorch version: 0.4.1, 1.0.0, 1.0.1, 1.1.0, 1.2.0, 1.3.0, 1.3.1, 1.4.0, 1.5.0, 1.5.1, 1.6.0
-TH_VERSION := 1.5.0
+TH_VERSION := 1.4.0
 WGET := wget --tries=3
 
 # Use pip for pytorch installation even if you have anaconda
@@ -54,9 +54,9 @@ PIP_CHAINER := chainer==$(CHAINER_VERSION)
 all: kaldi showenv python conda_packages.done sctk.done sph2pipe.done check_install
 
 ifneq ($(strip $(CHAINER_VERSION)),)
-python: activate_python.sh warp-ctc.done espnet.done pytorch.done chainer.done
+python: activate_python.sh warp-ctc.done warp-transducer.done espnet.done pytorch.done chainer_ctc.done chainer.done
 else
-python: activate_python.sh warp-ctc.done espnet.done pytorch.done
+python: activate_python.sh warp-ctc.done warp-transducer.done espnet.done pytorch.done
 endif
 
 extra: nkf.done moses.done mwerSegmenter.done pesq kenlm.done pyopenjtalk.done py3mmseg.done
@@ -110,7 +110,11 @@ else
 conda_packages.done:
 endif
 	touch conda_packages.done
-	
+
+
+sctk.done:
+	./installers/install_sctk.sh
+	touch sctk.done
 sph2pipe.done:
 	./installers/install_sph2pipe.sh
 	touch sph2pipe.done
@@ -150,6 +154,20 @@ endif
 warp-ctc.done: pytorch.done conda_packages.done
 	. ./activate_python.sh && ./installers/install_warp-ctc.sh
 	touch warp-ctc.done
+
+warp-transducer.done: pytorch.done conda_packages.done
+ifeq ($(strip $(CPU_ONLY)),)
+	. ./activate_python.sh && ./installers/install_warp-transducer.sh
+	. ./activate_python.sh &&  ./installers/install_warp-rnnt.sh $(CUDA_VERSION)
+	touch warp-transducer.done
+else
+	. ./activate_python.sh && ./installers/install_warp-transducer.sh
+	touch warp-transducer.done
+endif
+
+chainer_ctc.done: chainer.done
+	. ./activate_python.sh && ./installers/install_chainer_ctc.sh
+	touch chainer_ctc.done
 
 nkf.done:
 	./installers/install_nkf.sh
@@ -200,13 +218,13 @@ endif
 
 
 clean: clean_extra
-	rm -rf warp-ctc
+	rm -rf warp-ctc warp-transducer warp-rnnt chainer_ctc
 	rm -rf *.done
 	find . -iname "*.pyc" -delete
 
 clean_python:
-	rm -rf warp-ctc chainer_ctc
-	rm -f warp-ctc.done espnet.done chainer.done pytorch.done
+	rm -rf warp-ctc warp-transducer warp-rnnt chainer_ctc
+	rm -f warp-ctc.done chainer_ctc.done espnet.done chainer.done pytorch.done warp-transducer.done
 	find . -iname "*.pyc" -delete
 
 clean_extra:
